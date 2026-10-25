@@ -587,6 +587,20 @@ def build_markdown(records):
     return "\n".join(lines)
 
 
+def build_text(records):
+    """Plain text archive: posts in chronological order."""
+    posts = [r for r in records if r["type"] == "app.bsky.feed.post"]
+    if not posts:
+        return "No posts found.\n"
+
+    blocks = []
+    for post in sort_records(posts):
+        lines = [post["createdAt"] or "Undated", "", post["text"] or "(no text)"]
+        lines.extend(_context_lines(post))
+        blocks.append("\n".join(lines))
+    return "\n\n".join(blocks) + "\n"
+
+
 def sanitize(value):
     """Turn a decoded CBOR value into JSON safe data."""
     if isinstance(value, CIDLink):
@@ -644,9 +658,9 @@ def run(argv=None):
     parser.add_argument("input", help="Bluesky export .car file to read")
     parser.add_argument("--out-dir", default="archive",
                         help="directory to write into (default: archive)")
-    parser.add_argument("--format", choices=["md", "json", "both"],
+    parser.add_argument("--format", choices=["md", "json", "both", "txt"],
                         default="both",
-                        help="output format: md, json, or both (default: both)")
+                        help="output format: md, json, both, or txt (default: both)")
     parser.add_argument("--type", dest="record_types", action="append",
                         default=None,
                         help="only include this record type (repeatable)")
@@ -710,6 +724,10 @@ def run(argv=None):
             (out_dir / "posts.json").write_text(
                 json.dumps(payload, indent=2) + "\n", encoding="utf-8")
             written.append("posts.json")
+        if args.format == "txt":
+            (out_dir / "archive.txt").write_text(build_text(records),
+                                                  encoding="utf-8")
+            written.append("archive.txt")
     except OSError as exc:
         print("Error: cannot write output: %s" % (exc.strerror or exc),
               file=sys.stderr)
