@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bsky-unpack"
+version = "1.0.0"
+description = "Convert a Bluesky account export (.car file) into a readable local archive."
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+authors = [{name = "Amir Hussain"}]
+dependencies = []
+
+[project.scripts]
+bsky-unpack = "bsky_unpack:main"
+
+[tool.setuptools]
+py-modules = ["bsky_unpack"]
