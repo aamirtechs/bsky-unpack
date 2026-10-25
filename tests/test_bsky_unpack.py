@@ -394,6 +394,38 @@ class CliTests(unittest.TestCase):
         payload = json.loads((self.out / "posts.json").read_text())
         self.assertEqual(len(payload), 3)
 
+    def test_since_includes_boundary_and_keeps_undated_records(self):
+        result = run_cli([str(self.car), "--out-dir", str(self.out),
+                          "--since", "2026-01-02", "--format", "json"])
+        self.assertEqual(result.returncode, 0, result.stderr)
+        payload = json.loads((self.out / "posts.json").read_text())
+        posts = [r["text"] for r in payload if r["type"] == POST]
+        self.assertEqual(posts, ["second"])
+        self.assertTrue(any(r["type"] == PROFILE for r in payload))
+
+    def test_until_excludes_boundary_and_keeps_undated_records(self):
+        result = run_cli([str(self.car), "--out-dir", str(self.out),
+                          "--until", "2026-01-02", "--format", "json"])
+        self.assertEqual(result.returncode, 0, result.stderr)
+        payload = json.loads((self.out / "posts.json").read_text())
+        posts = [r["text"] for r in payload if r["type"] == POST]
+        self.assertEqual(posts, ["first"])
+        self.assertTrue(any(r["type"] == PROFILE for r in payload))
+
+    def test_stats_only_respects_both_date_filters(self):
+        result = run_cli([str(self.car), "--stats-only", "--since",
+                          "2026-01-02", "--until", "2026-01-03"])
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Records: 2", result.stdout)
+        self.assertIn("app.bsky.feed.post: 1", result.stdout)
+        self.assertIn("app.bsky.actor.profile: 1", result.stdout)
+        self.assertNotIn("app.bsky.feed.like", result.stdout)
+
+    def test_date_filter_requires_iso_date(self):
+        result = run_cli([str(self.car), "--since", "2026-1-2"])
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("YYYY-MM-DD", result.stderr)
+
     def test_stats_only_writes_nothing(self):
         result = run_cli([str(self.car), "--stats-only"])
         self.assertEqual(result.returncode, 0, result.stderr)

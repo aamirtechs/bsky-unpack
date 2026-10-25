@@ -470,6 +470,31 @@ def _created_timestamp(record):
     return parsed.timestamp()
 
 
+def _parse_date_boundary(value):
+    """Parse a YYYY-MM-DD boundary as midnight UTC."""
+    try:
+        if (len(value) != 10 or value[4] != "-" or value[7] != "-"
+                or not value[:4].isdigit() or not value[5:7].isdigit()
+                or not value[8:].isdigit()):
+            raise ValueError
+        parsed = datetime.strptime(value, "%Y-%m-%d")
+    except ValueError:
+        raise argparse.ArgumentTypeError("date must be in YYYY-MM-DD format")
+    return parsed.replace(tzinfo=timezone.utc).timestamp()
+
+
+def _record_matches_date_range(record, since, until):
+    """Return whether a record's timestamp is in the requested date range."""
+    stamp = _created_timestamp(record)
+    if stamp is None:
+        return True
+    if since is not None and stamp < since:
+        return False
+    if until is not None and stamp >= until:
+        return False
+    return True
+
+
 def sort_records(records):
     """Chronological order, undated records last, stable for ties."""
     def key(item):
@@ -625,6 +650,10 @@ def run(argv=None):
     parser.add_argument("--type", dest="record_types", action="append",
                         default=None,
                         help="only include this record type (repeatable)")
+    parser.add_argument("--since", type=_parse_date_boundary,
+                        help="include records on or after this UTC date")
+    parser.add_argument("--until", type=_parse_date_boundary,
+                        help="include records before this UTC date")
     parser.add_argument("--stats-only", action="store_true",
                         help="print counts per record type and write nothing")
     parser.add_argument("--check", action="store_true",
@@ -652,6 +681,9 @@ def run(argv=None):
     if args.record_types:
         wanted = set(args.record_types)
         records = [r for r in records if r["type"] in wanted]
+    if args.since is not None or args.until is not None:
+        records = [r for r in records
+                   if _record_matches_date_range(r, args.since, args.until)]
     stats = compute_stats(header, blocks, records, other_count)
 
     if args.stats_only:

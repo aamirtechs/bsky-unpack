@@ -99,8 +99,15 @@ OK: valid CAR with 6 block(s), 5 record(s).
 | `--out-dir DIR` | Directory to write into. Default: `archive`. |
 | `--format md\|json\|both` | Write only markdown, only JSON, or both. Default: `both`. |
 | `--type TYPE` | Only include this record type, for example `app.bsky.feed.post`. Repeatable. |
+| `--since YYYY-MM-DD` | Keep records on or after this UTC date. |
+| `--until YYYY-MM-DD` | Keep records before this UTC date. |
 | `--stats-only` | Print counts per record type and write nothing. |
 | `--check` | Validate that the CAR parses cleanly. Exit 0 on success, nonzero with a plain error message on corrupt input. |
+
+Date filters apply to records with a parseable `createdAt` timestamp. Records
+without a valid `createdAt` remain in the output. The `--since` boundary is
+inclusive and the `--until` boundary is exclusive; both dates are interpreted
+as midnight UTC.
 
 Output files, when written:
 
@@ -149,12 +156,12 @@ single, and double precision floats.
 python3 -m unittest discover -s tests
 ```
 
-52 tests, all passing, covering CBOR decoding of each major type,
+56 tests, all passing, covering CBOR decoding of each major type,
 varint framing, header parsing, CID handling, post extraction and
 chronological ordering, reply and quote context, `--type` filtering,
-`--stats-only` counts, `--check` pass and fail on corrupt input, JSON
-output shape, and markdown output content. The CBOR encoder in the test
-file exists only to build synthetic fixtures.
+`--stats-only` counts and date filtering, `--check` pass and fail on corrupt
+input, JSON output shape, and markdown output content. The CBOR encoder in the
+test file exists only to build synthetic fixtures.
 
 ## License
 
