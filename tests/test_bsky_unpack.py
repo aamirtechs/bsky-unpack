@@ -344,6 +344,7 @@ class CliTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertTrue((self.out / "index.md").exists())
         self.assertTrue((self.out / "posts.json").exists())
+        self.assertFalse((self.out / "archive.txt").exists())
         self.assertIn("Wrote 2 post(s)", result.stdout)
 
     def test_input_not_modified(self):
@@ -360,6 +361,41 @@ class CliTests(unittest.TestCase):
         run_cli([str(self.car), "--out-dir", str(self.out), "--format", "json"])
         self.assertFalse((self.out / "index.md").exists())
         self.assertTrue((self.out / "posts.json").exists())
+
+    def test_format_txt_only_and_chronological(self):
+        reply = post_record(
+            "reply text", "2026-01-03T00:00:00Z",
+            {
+                "reply": {"root": make_cid(1), "parent": make_cid(2)},
+                "embed": {
+                    "$type": "app.bsky.embed.record",
+                    "record": make_cid(3),
+                },
+            },
+        )
+        self.car.write_bytes(make_car([
+            (make_cid(4), post_record("second", "2026-01-02T00:00:00Z")),
+            (make_cid(5), post_record("first", "2026-01-01T00:00:00Z")),
+            (make_cid(6), reply),
+        ]))
+
+        result = run_cli([
+            str(self.car), "--out-dir", str(self.out), "--format", "txt",
+        ])
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue((self.out / "archive.txt").exists())
+        self.assertFalse((self.out / "index.md").exists())
+        self.assertFalse((self.out / "posts.json").exists())
+        self.assertIn("archive.txt", result.stdout)
+        self.assertEqual(
+            (self.out / "archive.txt").read_text(),
+            "2026-01-01T00:00:00Z\n\nfirst\n\n"
+            "2026-01-02T00:00:00Z\n\nsecond\n\n"
+            "2026-01-03T00:00:00Z\n\nreply text\n"
+            "- Reply to: %s\n- Thread root: %s\n- Quote: %s\n"
+            % (make_cid(2).cid, make_cid(1).cid, make_cid(3).cid),
+        )
 
     def test_json_output_shape(self):
         run_cli([str(self.car), "--out-dir", str(self.out), "--format", "json"])

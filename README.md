@@ -97,7 +97,7 @@ OK: valid CAR with 6 block(s), 5 record(s).
 | --- | --- |
 | `export.car` (positional) | The Bluesky export file to read. |
 | `--out-dir DIR` | Directory to write into. Default: `archive`. |
-| `--format md\|json\|both` | Write only markdown, only JSON, or both. Default: `both`. |
+| `--format md\|json\|both\|txt` | Write markdown, JSON, both (default), or a plain text archive. |
 | `--type TYPE` | Only include this record type, for example `app.bsky.feed.post`. Repeatable. |
 | `--since YYYY-MM-DD` | Keep records on or after this UTC date. |
 | `--until YYYY-MM-DD` | Keep records before this UTC date. |
@@ -118,6 +118,9 @@ Output files, when written:
 - `posts.json`: machine readable list of extracted records, each with
   `type`, `cid`, `createdAt`, `text`, and `did` when the record carries
   one. Records are in chronological order, undated records last.
+- `archive.txt`: plain text posts in chronological order, with each post's
+  date, text, and available reply or quote context. Use `--format txt` to
+  write this file by itself; `both` remains markdown and JSON only.
 
 ## CAR format notes
 
