@@ -1,4 +1,5 @@
 # bsky-unpack
+**Live tool:** https://aamirtechs.github.io/bsky-unpack/ (runs in your browser, no install)
 
 Turn a Bluesky account export (`.car` file) into a readable local archive.
 Bluesky exports are opaque CAR blobs; this gives you your own posts back
